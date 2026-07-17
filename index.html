@@ -25,14 +25,16 @@
   *{box-sizing:border-box}
   html,body{margin:0;height:100%}
   body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,"Noto Sans SC",sans-serif;
-    display:flex;flex-direction:column;min-height:100vh}
-  .wrap{max-width:720px;margin:0 auto;width:100%;padding:16px;flex:1;display:flex;flex-direction:column}
-  header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
-  .brand{font-weight:700;font-size:17px;letter-spacing:.3px;cursor:pointer;user-select:none}
+    display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden}
+  .wrap{max-width:720px;margin:0 auto;width:100%;padding:16px;padding-top:calc(20px + env(safe-area-inset-top,0px));flex:1;display:flex;flex-direction:column;min-height:0}
+  header{margin-bottom:14px}
+  .hrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .hbtns{display:flex;gap:6px;flex:0 0 auto}
+  .brand{font-weight:700;font-size:18px;letter-spacing:.3px;cursor:pointer;user-select:none}
   .brand:hover{color:var(--accent)}
-  .brand small{color:var(--muted);font-weight:500;margin-left:6px;font-size:12px}
-  .stats{display:flex;gap:8px;flex-wrap:wrap}
-  .chip{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-size:12.5px;color:var(--muted);white-space:nowrap}
+  .stats{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .stats::-webkit-scrollbar{display:none}
+  .chip{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px 9px;font-size:11.5px;color:var(--muted);white-space:nowrap;flex:0 0 auto}
   .chip b{color:var(--ink);font-weight:700}
   .chip.new b{color:var(--accent)} .chip.due b{color:var(--warn)} .chip.streak b{color:var(--good)}
   .chip.clk{cursor:pointer} .chip.clk:hover{border-color:var(--accent)} .chip.clk:active{transform:translateY(1px)}
@@ -40,8 +42,11 @@
   .pfill{height:100%;background:linear-gradient(90deg,var(--good),var(--accent));border-radius:999px;transition:width .4s ease}
   .iconbtn{background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:6px 9px;cursor:pointer;font-size:13px}
   .iconbtn:hover{color:var(--ink)}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px 22px;flex:1;display:flex;flex-direction:column}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 20px;flex:1;display:flex;flex-direction:column;min-height:0}
   .center{align-items:center;justify-content:center;text-align:center}
+  .cardtop{flex:0 0 auto;text-align:center}
+  .cardscroll{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;margin:6px -4px 0;padding:2px 4px}
+  .cardbtns{flex:0 0 auto;padding-top:12px}
   .hanzi{font-size:118px;line-height:1.05;font-weight:600;margin:6px 0 2px}
   .badge{font-size:12px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase}
   .timerbar{height:6px;background:var(--panel2);border-radius:999px;overflow:hidden;width:100%;max-width:340px;margin:14px 0 4px}
@@ -74,7 +79,15 @@
   .v{font-size:15px;line-height:1.5}
   .cmp{display:flex;flex-direction:column;gap:5px}
   .cmp div{font-size:15px} .cmp .w{font-weight:600} .cmp .p{color:var(--accent);font-size:13px;margin:0 6px}
-  .ex .zh{font-size:16px;line-height:1.6} .ex .p{color:var(--muted);font-size:12.5px;margin-top:2px} .ex .en{font-size:13.5px;margin-top:2px}
+  .ex .zh{font-size:16px;line-height:1.6;cursor:pointer} .ex .en{font-size:13.5px;margin-top:2px;color:var(--muted)}
+  .ex-p{color:var(--accent);font-size:12.5px;line-height:1.5;visibility:hidden;margin-bottom:2px}
+  .ex-p.show{visibility:visible}
+  .btncol{display:flex;flex-direction:column;gap:8px;max-width:340px;margin:16px auto 0;width:100%}
+  .btncol .b{width:100%}
+  @media (max-width:480px){
+    .hanzi{font-size:92px} .learn .hanzi{font-size:76px}
+    .card{padding:20px 15px} .rd-pin{font-size:26px} .row{padding:8px 0}
+  }
   .zhbig{font-size:19px}
   .learn .hanzi{font-size:96px}
   .empty{color:var(--muted);text-align:center;line-height:1.7}
@@ -94,12 +107,14 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="brand" id="brandHome" title="Back to home">汉字 SRS <small id="deckName">spaced repetition</small></div>
-    <div class="stats" id="stats"></div>
-    <div style="display:flex;gap:6px">
-      <button class="iconbtn" id="btnSettings" title="Settings">⚙</button>
-      <button class="iconbtn" id="btnData" title="Backup / data">⇅</button>
+    <div class="hrow">
+      <div class="brand" id="brandHome" title="Back to home">汉字 SRS</div>
+      <div class="hbtns">
+        <button class="iconbtn" id="btnSettings" title="Settings">⚙</button>
+        <button class="iconbtn" id="btnData" title="Backup / data">⇅</button>
+      </div>
     </div>
+    <div class="stats" id="stats"></div>
   </header>
 
   <div class="card" id="stage"></div>
@@ -270,6 +285,26 @@ function buildSession(extra){
 }
 
 /* ---------- pinyin grading ---------- */
+/* ---------- pinyin tone-number -> tone-mark (display only; input stays tone numbers) ---------- */
+const TONE_MAP={a:'āáǎàa',e:'ēéěèe',i:'īíǐìi',o:'ōóǒòo',u:'ūúǔùu','ü':'ǖǘǚǜü'};
+function syl2mark(letters,tone){
+  let s=letters.toLowerCase().replace(/u:/g,'ü').replace(/v/g,'ü');
+  const t=parseInt(tone,10)-1;
+  let idx=-1,target='';
+  if(s.indexOf('a')>=0){target='a';idx=s.indexOf('a');}
+  else if(s.indexOf('e')>=0){target='e';idx=s.indexOf('e');}
+  else if(s.indexOf('ou')>=0){target='o';idx=s.indexOf('o');}
+  else{ const m=s.match(/[aeiouü]/g); if(m){ target=m[m.length-1]; idx=s.lastIndexOf(target);} }
+  if(idx<0||!TONE_MAP[target]) return s;
+  return s.slice(0,idx)+TONE_MAP[target][t]+s.slice(idx+1);
+}
+function toneMarks(str){
+  if(!str) return str;
+  return String(str).replace(/([a-zü:]+)([1-5])/gi,(m,letters,tone)=>syl2mark(letters,tone));
+}
+/* tap a sentence to reveal/hide its pinyin without shifting layout (pinyin space is reserved) */
+function togglePinyin(el){ const p=el.parentNode.querySelector('.ex-p'); if(p) p.classList.toggle('show'); }
+
 function normPin(s){
   return (s||'').toLowerCase().trim()
     .replace(/ü/g,'u').replace(/u:/g,'u').replace(/v/g,'u')
@@ -292,14 +327,13 @@ function renderStats(){
   const due=dueReviews().length;
   const el=document.getElementById('stats');
   el.innerHTML=`
-    <span class="chip new${nLeft>0?' clk':''}" id="chipNew" title="${nLeft>0?'Jump to learning new cards':''}">New left <b>${nLeft}</b></span>
+    <span class="chip new${nLeft>0?' clk':''}" id="chipNew" title="${nLeft>0?'Jump to learning new cards':''}">New <b>${nLeft}</b></span>
     <span class="chip due${due>0?' clk':''}" id="chipDue" title="${due>0?'Jump to reviews':''}">Due <b>${due}</b></span>
     <span class="chip streak">Streak <b>${state.streak}</b></span>
     <span class="chip" title="Characters you know toward the ${fmtNum(masteryTarget())} 常用字 (your existing ${fmtNum(masteryBase())} + learned here)">Known <b>${fmtNum(masteryKnown())}</b>/${fmtNum(masteryTarget())}</span>`;
   const cn=document.getElementById('chipNew'); if(cn&&nLeft>0) cn.onclick=()=>startNew();
   const cd=document.getElementById('chipDue'); if(cd&&due>0) cd.onclick=()=>startReviews();
-  const dn=(EMBEDDED_DECK&&EMBEDDED_META&&EMBEDDED_META.name)||'';
-  document.getElementById('pnote').textContent = EMBEDDED_META? EMBEDDED_META.name : '';
+  document.getElementById('pnote').textContent = 'Hanzi SRS';
 }
 
 function clearTimer(){ if(timerHandle){clearInterval(timerHandle);timerHandle=null;} }
@@ -423,17 +457,18 @@ function showRapidMiss(card,val){
 function showNewCard(card){
   stage.className='card learn';
   stage.innerHTML=`
-    <div class="center" style="align-items:center">
+    <div class="cardtop">
       <div class="badge">New character · rank ${card.rank||'—'}</div>
       <div class="hanzi">${card.char}</div>
-      <div class="rd-pin">${card.pinyinDisplay||card.pinyin.join(' / ')}</div>
+      <div class="rd-pin">${toneMarks(card.pinyinDisplay||card.pinyin.join(' / '))}</div>
     </div>
-    ${revealBody(card,true)}
-    <div class="btnrow">
-      <button class="b ghost" id="knowBtn">I already know this</button>
-      <button class="b" id="learnBtn">Got it — start learning</button>
-    </div>
-    <div class="hint" style="text-align:center;margin:10px auto 0">This card enters your review queue and will come back for a timed recall test.</div>`;
+    <div class="cardscroll">${revealBody(card,true)}</div>
+    <div class="cardbtns">
+      <div class="btncol">
+        <button class="b" id="learnBtn">Learn</button>
+        <button class="b ghost" id="knowBtn">I know this</button>
+      </div>
+    </div>`;
   document.getElementById('learnBtn').onclick=()=>{
     grade(card,4); // schedule first review (+1 day)
     state.daily.newDone++; save(); next();
@@ -476,16 +511,16 @@ function startTimer(secs,onEnd){
 }
 
 function revealBody(card, isNew){
-  const cmp=(card.compounds||[]).map(c=>`<div><span class="w">${c.w}</span><span class="p">${c.p}</span>— ${c.m}</div>`).join('');
-  const ex=(card.examples||[]).map(e=>`<div class="ex" style="margin-bottom:8px"><div class="zh">${e.zh}</div><div class="p">${e.p}</div><div class="en">${e.en}</div></div>`).join('');
+  const cmp=(card.compounds||[]).map(c=>`<div><span class="w">${c.w}</span><span class="p">${toneMarks(c.p)}</span>— ${c.m}</div>`).join('');
+  const ex=(card.examples||[]).map(e=>`<div class="ex" style="margin-bottom:10px"><div class="ex-p">${toneMarks(e.p)}</div><div class="zh" onclick="togglePinyin(this)" title="Tap to show pinyin">${e.zh}</div><div class="en">${e.en}</div></div>`).join('');
   const radRow = (card.radical||card.readings) ?
-    `<div class="row"><div class="k">Radical / components</div><div class="v">${card.radical||''}${card.components?`<br><span class="muted">${card.components}</span>`:''}${card.readings?`<br><span class="muted">Readings: ${card.readings}</span>`:''}</div></div>` : '';
+    `<div class="row"><div class="k">Radical / components</div><div class="v">${toneMarks(card.radical||'')}${card.components?`<br><span class="muted">${toneMarks(card.components)}</span>`:''}${card.readings?`<br><span class="muted">Readings: ${toneMarks(card.readings)}</span>`:''}</div></div>` : '';
   const cmpRow = (card.compounds&&card.compounds.length) ?
     `<div class="row"><div class="k">Compounds 词语</div><div class="v cmp">${cmp}</div></div>` : '';
   const exRow = (card.examples&&card.examples.length) ?
-    `<div class="row"><div class="k">Examples 例句</div><div class="v">${ex}</div></div>` : '';
+    `<div class="row"><div class="k">Examples 例句 <span class="muted" style="text-transform:none;letter-spacing:0">· tap a sentence for pinyin</span></div><div class="v">${ex}</div></div>` : '';
   return `<div class="reveal">
-    <div class="row"><div class="k">Meaning</div><div class="v">${card.meaning}${card.meaningZh?` <span class="muted">· ${card.meaningZh}</span>`:''}</div></div>
+    <div class="row"><div class="k">Meaning</div><div class="v">${card.meaning}${card.meaningZh?`<div class="muted" style="margin-top:3px">${card.meaningZh}</div>`:''}</div></div>
     ${radRow}${cmpRow}${exRow}
   </div>`;
 }
@@ -498,19 +533,20 @@ function doReveal(card, inputVal){
   const shown=(inputVal&&inputVal.trim())?inputVal.trim():'(no answer)';
   stage.className='card';
   stage.innerHTML=`
-    <div class="center" style="align-items:center">
-      <div class="hanzi" style="font-size:84px">${card.char}</div>
-      <div class="rd-pin">${card.pinyinDisplay||card.pinyin.join(' / ')}</div>
+    <div class="cardtop">
+      <div class="hanzi" style="font-size:76px">${card.char}</div>
+      <div class="rd-pin">${toneMarks(card.pinyinDisplay||card.pinyin.join(' / '))}</div>
       <div class="verdict ${ok?'ok':'no'}">${ok?'✓ Pinyin correct':'✗ Pinyin — you typed: '+shown}</div>
     </div>
-    ${revealBody(card,false)}
-    <div class="hint" style="text-align:center;margin:6px auto 2px">How did it go? (reading <b>and</b> meaning)</div>
-    <div class="btnrow" id="gradeRow">
-      <button class="b again" data-q="1">Study</button>
-      <button class="b good" data-q="4">Review Again</button>
-      <button class="b easy" data-q="5">Easy</button>
-    </div>
-    <div class="hint" style="text-align:center;margin-top:8px">${session.practice?'Practice mode — tap any rating to continue; nothing is scheduled.':'Missed the reading or meaning? <b>Study</b>. Knew it? <b>Review Again</b>. Too easy? <b>Easy</b>. Keys <kbd>1</kbd>–<kbd>3</kbd>.'}</div>`;
+    <div class="cardscroll">${revealBody(card,false)}</div>
+    <div class="cardbtns">
+      <div class="hint" style="text-align:center;margin:0 auto 8px">How did it go? (reading <b>and</b> meaning)</div>
+      <div class="btnrow" id="gradeRow">
+        <button class="b again" data-q="1">Study</button>
+        <button class="b good" data-q="4">Review Again</button>
+        <button class="b easy" data-q="5">Easy</button>
+      </div>
+    </div>`;
   document.querySelectorAll('#gradeRow .b').forEach(btn=>{
     btn.onclick=()=>applyGrade(card, parseInt(btn.dataset.q,10));
   });
@@ -672,7 +708,7 @@ function openBrowse(){
     const tag=s==='new'?'<span class="muted">new</span>':s==='known'?'<span style="color:var(--muted)">known ✓</span>':
       `due ${fmtDue(p.due)}`;
     return `<div class="field" style="align-items:center">
-      <span><b style="font-size:20px">${c.char}</b> <span class="muted">${c.pinyinDisplay||c.pinyin.join('/')}</span> — ${c.meaning}</span>
+      <span><b style="font-size:20px">${c.char}</b> <span class="muted">${toneMarks(c.pinyinDisplay||c.pinyin.join('/'))}</span> — ${c.meaning}</span>
       <span class="muted" style="font-size:12px;white-space:nowrap">${tag}</span></div>`;
   }).join('');
   dB.showModal();
@@ -690,7 +726,6 @@ document.getElementById('mBrowse').onclick=()=>{ dM.close(); openBrowse(); };
 document.getElementById('brandHome').onclick=()=>{ clearTimer(); keyGrade=null; renderLanding(); };
 
 /* ---------- boot ---------- */
-document.getElementById('deckName').textContent = (EMBEDDED_META&&EMBEDDED_META.name)? '· pack loaded':'spaced repetition';
 renderLanding();
 /* register service worker (only takes effect when hosted; harmless as a local file) */
 if('serviceWorker' in navigator){ window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }); }
