@@ -43,6 +43,8 @@
   .iconbtn:hover{color:var(--ink)}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 20px;flex:1;display:flex;flex-direction:column;min-height:0}
   .center{align-items:center;justify-content:center;text-align:center}
+  .prompt{align-items:center;justify-content:flex-start;text-align:center;padding-top:26px}
+  .qchar{font-size:104px;line-height:1.05;font-weight:600;margin:2px 0 2px;text-align:center}
   .cardtop{flex:0 0 auto;text-align:center}
   .cardscroll{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;margin:6px -4px 0;padding:2px 4px}
   .cardbtns{flex:0 0 auto;padding-top:12px}
@@ -62,8 +64,8 @@
   button.b.good{background:var(--good)} button.b.again{background:var(--bad)} button.b.hard{background:var(--warn)}
   button.b.easy{background:var(--easy)} button.b:active{transform:translateY(1px)}
   button.b.sm{padding:8px 13px;font-size:13.5px}
-  .seg{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel2)}
-  .seg button{border:none;background:transparent;color:var(--muted);padding:10px 18px;font-size:14.5px;font-weight:600;cursor:pointer}
+  .seg{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel2)}
+  .seg button{flex:1;border:none;background:transparent;color:var(--muted);padding:10px 6px;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap}
   .seg button.on{background:var(--toggle);color:#fff}
   .seg button:disabled{opacity:.4;cursor:default}
   .menuitem{display:block;width:100%;text-align:left;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px 14px;font-size:14.5px;font-weight:600;cursor:pointer;margin-bottom:6px}
@@ -83,8 +85,9 @@
   .btncol{display:flex;flex-direction:column;gap:8px;max-width:340px;margin:16px auto 0;width:100%}
   .btncol .b{width:100%}
   @media (max-width:480px){
-    .hanzi{font-size:92px} .learn .hanzi{font-size:76px}
+    .hanzi{font-size:92px} .learn .hanzi{font-size:76px} .qchar{font-size:88px}
     .card{padding:20px 15px} .rd-pin{font-size:26px} .row{padding:8px 0}
+    .prompt{padding-top:18px}
   }
   .zhbig{font-size:19px}
   .learn .hanzi{font-size:96px}
@@ -198,7 +201,7 @@ function now(){ return Date.now(); }
 function defaultState(){
   return {
     settings:{ newPerDay:10, reviewPerDay:20, timerSeconds:10, mode:'full' },
-    daily:{ date:todayStr(), newDone:0, reviewDone:0 },
+    daily:{ date:todayStr(), newDone:0, reviewDone:0, studied:[] },
     streak:0, lastStudyDate:null,
     progress:{},          // id -> {status, due, interval, ease, reps, lapses, introduced}
     extraCards:[]         // imported extra deck cards
@@ -226,9 +229,14 @@ function prog(id){
 /* ---------- daily rollover ---------- */
 function rollover(){
   if(state.daily.date!==todayStr()){
-    state.daily={ date:todayStr(), newDone:0, reviewDone:0 };
+    state.daily={ date:todayStr(), newDone:0, reviewDone:0, studied:[] };
     save();
   }
+  if(!state.daily.studied) state.daily.studied=[];
+}
+function markStudiedToday(id){
+  if(!state.daily.studied) state.daily.studied=[];
+  if(!state.daily.studied.includes(id)){ state.daily.studied.push(id); save(); }
 }
 
 /* ---------- queues ---------- */
@@ -345,17 +353,27 @@ function renderStats(){
 
 function clearTimer(){ if(timerHandle){clearInterval(timerHandle);timerHandle=null;} }
 
-function renderDone(msg){
-  clearTimer();
+function renderDone(title, sub){
+  clearTimer(); keyGrade=null;
+  const due=dueReviews().length;
+  const nLeft=Math.max(0,state.settings.newPerDay-state.daily.newDone);
+  const studied=(state.daily.studied||[]).length;
   stage.className='card center';
-  stage.innerHTML=`<div class="empty"><h2>✓ ${msg||'All done'}</h2>
-    <p>Nothing due right now.<br>New today: <b>${state.daily.newDone}</b> · Reviews today: <b>${state.daily.reviewDone}</b></p>
-    <div class="btnrow">
-      <button class="b" id="againBtn">Study again</button>
-      <button class="b ghost" id="extraBtn">Extra practice</button>
-    </div></div>`;
-  document.getElementById('againBtn').onclick=()=>startStudy(false);
-  document.getElementById('extraBtn').onclick=()=>startStudy(true);
+  stage.innerHTML=`<div class="empty">
+    <h2>${title||'Done'}</h2>
+    ${sub?`<p style="margin-top:4px">${sub}</p>`:''}
+    <p class="muted" style="margin-top:10px">New today: <b>${state.daily.newDone}</b> · Reviews today: <b>${state.daily.reviewDone}</b></p>
+    <div class="btncol" style="margin-top:8px">
+      ${due>0?`<button class="b" id="revBtn">Review now (${due})</button>`:''}
+      ${nLeft>0?`<button class="b ${due>0?'ghost':''}" id="newBtn">Learn new cards (${nLeft})</button>`:''}
+      ${studied?`<button class="b ghost" id="againBtn">Study today's words again</button>`:''}
+      <button class="b ghost" id="homeBtn">Home</button>
+    </div>
+  </div>`;
+  const rev=document.getElementById('revBtn'); if(rev) rev.onclick=()=>startReviews();
+  const nw=document.getElementById('newBtn'); if(nw) nw.onclick=()=>startNew();
+  const ag=document.getElementById('againBtn'); if(ag) ag.onclick=()=>startReplay();
+  document.getElementById('homeBtn').onclick=()=>renderLanding();
   renderStats();
 }
 
@@ -367,23 +385,52 @@ function startStudy(extra){
   session.idx=0; showCard();
 }
 
-/* Jump straight to today's remaining NEW cards (from the "New left" chip). */
+/* FULL STUDY tab / New chip: today's new cards. */
 function startNew(){
   rollover();
   const budget=Math.max(0,state.settings.newPerDay-state.daily.newDone);
   const q=newCards().slice(0,budget).map(c=>({card:c,kind:'new'}));
-  if(!q.length){ renderDone('No new cards left for today — nice work!'); return; }
+  if(!q.length){ renderDone('No new cards left for today 🎉',''); return; }
   session={ queue:q, idx:0, extra:false, revealed:false, pinyinCorrect:null };
   showCard();
 }
-/* Jump straight to due reviews (from the "Due" chip). */
+/* REVIEW tab / Due chip: due reviews (timed test). When caught up, offers extra practice. */
 function startReviews(){
   rollover();
   const budget=Math.max(0,state.settings.reviewPerDay-state.daily.reviewDone);
   const q=dueReviews().slice(0,budget).map(c=>({card:c,kind:'review'}));
-  if(!q.length){ renderDone('No reviews due right now.'); return; }
-  session={ queue:q, idx:0, extra:false, revealed:false, pinyinCorrect:null };
+  if(q.length){ session={ queue:q, idx:0, extra:false, revealed:false, pinyinCorrect:null }; showCard(); return; }
+  startReviewPractice(); // nothing due -> extra review practice (no scheduling)
+}
+/* Extra review practice: test already-learned cards without changing the schedule. */
+function startReviewPractice(){
+  rollover();
+  const learned=fullDeck().filter(c=>{const s=prog(c.id).status; return s==='review'||s==='learning';})
+    .sort((a,b)=>prog(a.id).due-prog(b.id).due);
+  if(!learned.length){ renderDone('No reviews due','Learn some new cards first — they\'ll come back here to review.'); return; }
+  session={ queue:learned.slice(0,20).map(c=>({card:c,kind:'review'})), idx:0, practice:true, revealed:false, pinyinCorrect:null };
   showCard();
+}
+/* "Study again": flip through the words you studied today (view only, tap Next). */
+function startReplay(){
+  rollover();
+  const deck=fullDeck();
+  const cards=(state.daily.studied||[]).map(id=>deck.find(c=>c.id===id)).filter(Boolean);
+  if(!cards.length){ renderDone('Nothing studied yet today',''); return; }
+  session={ queue:cards.map(c=>({card:c,kind:'flip'})), idx:0, flip:true, practice:true, revealed:false, pinyinCorrect:null };
+  showCard();
+}
+function showFlipCard(card){
+  stage.className='card learn';
+  stage.innerHTML=`
+    <div class="cardtop">
+      <div class="badge">Review · ${session.idx+1} / ${session.queue.length}</div>
+      <div class="hanzi">${card.char}</div>
+      <div class="rd-pin">${toneMarks(card.pinyinDisplay||card.pinyin.join(' / '))}</div>
+    </div>
+    <div class="cardscroll">${revealBody(card,true)}</div>
+    <div class="cardbtns"><div class="btncol"><button class="b" id="nextBtn">Next</button></div></div>`;
+  document.getElementById('nextBtn').onclick=()=>next();
 }
 
 function showCard(){
@@ -391,6 +438,7 @@ function showCard(){
   const item=current();
   if(!item){ endSession(); return; }
   session.revealed=false; session.pinyinCorrect=null;
+  if(session.flip){ showFlipCard(item.card); renderStats(); return; } /* replay today's words */
   if(session.rapid){ showRapidPrompt(item.card); renderStats(); return; } /* RAPID */
   if(item.kind==='new'){ showNewCard(item.card); }
   else { showReviewPrompt(item.card); }
@@ -417,11 +465,11 @@ function startRapid(){
 }
 function showRapidPrompt(card){
   keyGrade=null;
-  stage.className='card center';
+  stage.className='card prompt';
   const t=state.settings.timerSeconds;
   stage.innerHTML=`
-    <div class="badge">⚡ Rapid · type pinyin + tone</div>
-    <div class="hanzi">${card.char}</div>
+    <div class="qchar">${card.char}</div>
+    <div class="badge" style="margin-top:2px">⚡ Rapid · type pinyin + tone</div>
     ${t>0?`<div class="timerbar"><div class="timerfill" id="tfill"></div></div><div class="tnum" id="tnum"></div>`:''}
     <input class="pin" id="pinIn" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="e.g. wo3">
     <div class="hint">Right answers jump ahead instantly · a miss sends the card back to full review. Press <kbd>Enter</kbd>.</div>`;
@@ -433,7 +481,7 @@ function doRapid(card,val){
   if(session.revealed) return;
   session.revealed=true; clearTimer();
   if(checkPinyin(card,val)){
-    grade(card,4); state.daily.reviewDone++; save();      // correct = normal pass
+    grade(card,4); state.daily.reviewDone++; markStudiedToday(card.id); save();      // correct = normal pass
     stage.className='card center';
     stage.innerHTML=`<div class="hanzi" style="color:var(--good);font-size:120px;margin:auto">✓</div>`;
     setTimeout(()=>next(), 200);
@@ -449,7 +497,7 @@ function showRapidMiss(card,val){
   stage.className='card center';
   stage.innerHTML=`
     <div class="badge" style="color:var(--bad)">✗ back to full review</div>
-    <div class="hanzi" style="font-size:92px">${card.char}</div>
+    <div class="qchar">${card.char}</div>
     <div class="rd-pin">${card.pinyinDisplay||card.pinyin.join(' / ')}</div>
     <div class="verdict no">you typed: ${shown}</div>
     <div class="v muted" style="text-align:center;max-width:420px;margin-top:6px">${card.meaning}</div>
@@ -478,7 +526,7 @@ function showNewCard(card){
     </div>`;
   document.getElementById('learnBtn').onclick=()=>{
     grade(card,4); // schedule first review (+1 day)
-    state.daily.newDone++; save(); next();
+    state.daily.newDone++; markStudiedToday(card.id); save(); next();
   };
   document.getElementById('knowBtn').onclick=()=>{
     markKnown(card); next(); // does not consume the daily-new budget
@@ -487,12 +535,12 @@ function showNewCard(card){
 
 /* REVIEW card: hidden pinyin, typed recall, timer */
 function showReviewPrompt(card){
-  stage.className='card center';
+  stage.className='card prompt';
   const t=state.settings.timerSeconds;
   const badge = session.practice ? 'Practice · type pinyin + tone (no effect on schedule)' : 'Recall · type pinyin + tone number';
   stage.innerHTML=`
-    <div class="badge">${badge}</div>
-    <div class="hanzi">${card.char}</div>
+    <div class="qchar">${card.char}</div>
+    <div class="badge" style="margin-top:2px">${badge}</div>
     ${t>0?`<div class="timerbar"><div class="timerfill" id="tfill"></div></div><div class="tnum" id="tnum"></div>`:''}
     <input class="pin" id="pinIn" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="e.g. wo3">
     <div class="hint">Type the reading with a tone number (1–5), e.g. <kbd>hao3</kbd>. Press <kbd>Enter</kbd> to check.</div>
@@ -541,7 +589,7 @@ function doReveal(card, inputVal){
   stage.className='card';
   stage.innerHTML=`
     <div class="cardtop">
-      <div class="hanzi" style="font-size:76px">${card.char}</div>
+      <div class="qchar">${card.char}</div>
       <div class="rd-pin">${toneMarks(card.pinyinDisplay||card.pinyin.join(' / '))}</div>
       <div class="verdict ${ok?'ok':'no'}">${ok?'✓ Pinyin correct':'✗ Pinyin — you typed: '+shown}</div>
     </div>
@@ -572,6 +620,7 @@ function applyGrade(card,q){
   if(session.practice){ keyGrade=null; next(); return; } /* PRACTICE (removable): no scheduling, no counters */
   const wasReview=item&&item.kind==='review';
   grade(card,q);
+  markStudiedToday(card.id);
   if(wasReview && q>=3){ state.daily.reviewDone++; }
   // If Again on a review, it will re-appear (still counts once as a review action when finally passed)
   save();
@@ -591,7 +640,13 @@ function next(){
 }
 
 function endSession(){
-  renderDone(session&&session.practice?'Practice complete — nothing was scheduled':(session&&session.rapid?'Rapid drill complete':'Session complete'));
+  if(session&&session.flip){ renderDone('Nice — reviewed today\'s words 👍',''); return; }
+  if(session&&session.practice){ renderDone('Practice complete','That was extra practice — your schedule is unchanged.'); return; }
+  if(session&&session.rapid){ renderDone('Rapid drill complete',''); return; }
+  const due=dueReviews().length, nLeft=Math.max(0,state.settings.newPerDay-state.daily.newDone);
+  if(due===0 && nLeft===0){ renderDone('Great work! 🎉',"You're all caught up."); }
+  else if(due>0){ renderDone('Nice — session done',`You still have ${due} review${due===1?'':'s'} due today.`); }
+  else { renderDone('Nice — session done',`${nLeft} new card${nLeft===1?'':'s'} still to learn today.`); }
 }
 
 /* PRACTICE (removable): run up to 10 cards through the timed-review flow without affecting scheduling. */
@@ -628,25 +683,28 @@ function renderLanding(){
   let mode=state.settings.mode||'full';
   if(mode==='rapid' && !rapidReady) mode='full'; // can't run rapid with an empty pool
   const desc = mode==='rapid'
-    ? 'Rapid drill — a pinyin-only speed pass over cards you already know. Correct jumps ahead; a miss goes back to full review.'
-    : 'Study today\'s new cards and review.';
+    ? 'A fast, pinyin-only pass over cards you already know.'
+    : mode==='review'
+    ? 'Review what\'s due today with a timed recall test.'
+    : 'Study today\'s new cards.';
   stage.className='card center';
   stage.innerHTML=`<div class="empty">
     <h2>你好, Grace 👋</h2>
     <p>${due} review${due===1?'':'s'} due · ${nLeft} new card${nLeft===1?'':'s'} to learn today</p>
-    <div class="seg" id="modeSeg" style="margin:8px 0 16px">
+    <div class="seg" id="modeSeg" style="margin:10px auto 16px;width:100%;max-width:360px">
       <button data-mode="full" class="${mode==='full'?'on':''}">Full study</button>
-      <button data-mode="rapid" class="${mode==='rapid'?'on':''}" ${rapidReady?'':'disabled'} title="${rapidReady?'Cards you already know — fast pinyin drill':'No cards are ready for a rapid drill yet'}">⚡ Rapid${rapidReady?` (${rapidReady})`:''}</button>
+      <button data-mode="review" class="${mode==='review'?'on':''}">Review</button>
+      <button data-mode="rapid" class="${mode==='rapid'?'on':''}" ${rapidReady?'':'disabled'} title="${rapidReady?'Cards you already know — fast pinyin drill':'No cards are ready for a rapid drill yet'}">⚡ Rapid</button>
     </div>
     <div class="btnrow">
       <button class="b" id="startBtn" style="font-size:17px;padding:13px 40px">Start</button>
     </div>
-    <p class="muted" id="modeDesc" style="margin-top:16px;min-height:2.6em">${desc}</p>
+    <p class="muted" id="modeDesc" style="margin-top:16px;height:3.2em;display:flex;align-items:center;justify-content:center;text-align:center">${desc}</p>
   </div>`;
   document.querySelectorAll('#modeSeg button').forEach(btn=>{
     btn.onclick=()=>{ if(btn.disabled) return; state.settings.mode=btn.dataset.mode; save(); renderLanding(); };
   });
-  document.getElementById('startBtn').onclick=()=>{ (mode==='rapid')?startRapid():startStudy(false); };
+  document.getElementById('startBtn').onclick=()=>{ mode==='rapid'?startRapid(): mode==='review'?startReviews(): startNew(); };
   renderStats();
 }
 
@@ -657,6 +715,8 @@ document.getElementById('btnSettings').onclick=()=>{
   document.getElementById('setRev').value=state.settings.reviewPerDay;
   document.getElementById('setTimer').value=state.settings.timerSeconds;
   dS.showModal();
+  // don't auto-focus the first number field (keeps the keyboard down + page from jumping on open)
+  requestAnimationFrame(()=>{ const a=document.activeElement; if(a&&a.tagName==='INPUT') a.blur(); });
 };
 document.getElementById('setClose').onclick=()=>dS.close();
 document.getElementById('setSave').onclick=()=>{
@@ -706,11 +766,24 @@ function openBrowse(){
     const p=prog(c.id); const s=p.status;
     const tag=s==='new'?'<span class="muted">new</span>':s==='known'?'<span style="color:var(--muted)">known ✓</span>':
       `due ${fmtDue(p.due)}`;
-    return `<div class="field" style="align-items:center">
+    return `<div class="field" style="align-items:center;cursor:pointer" onclick="showBrowseCard(${c.id})">
       <span><b style="font-size:20px">${c.char}</b> <span class="muted">${toneMarks(c.pinyinDisplay||c.pinyin.join('/'))}</span> — ${c.meaning}</span>
-      <span class="muted" style="font-size:12px;white-space:nowrap">${tag}</span></div>`;
+      <span class="muted" style="font-size:12px;white-space:nowrap">${tag} ›</span></div>`;
   }).join('');
   dB.showModal();
+}
+/* Tap a card in Browse to see its full detail (same view as learning it). */
+function showBrowseCard(id){
+  const card=fullDeck().find(c=>c.id===id); if(!card) return;
+  document.getElementById('browseCount').textContent='';
+  document.getElementById('browseList').innerHTML=`
+    <button class="b ghost sm" id="brBack" style="margin-bottom:12px">← Back to list</button>
+    <div style="text-align:center;margin-bottom:6px">
+      <div style="font-size:58px;line-height:1.1">${card.char}</div>
+      <div class="rd-pin" style="font-size:22px">${toneMarks(card.pinyinDisplay||card.pinyin.join(' / '))}</div>
+    </div>
+    ${revealBody(card,false)}`;
+  document.getElementById('brBack').onclick=()=>openBrowse();
 }
 document.getElementById('browseClose').onclick=()=>dB.close();
 function fmtDue(due){ const d=Math.round((due-now())/DAY_MS); if(d<=0)return 'now'; if(d===1)return '1d'; return d+'d'; }
