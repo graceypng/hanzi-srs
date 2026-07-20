@@ -16,11 +16,11 @@
   :root{
     --bg:#0f1419; --panel:#1a2027; --panel2:#232c36; --ink:#e8edf2; --muted:#8b98a5;
     --line:#2c3742; --accent:#4aa3ff; --good:#39c07a; --warn:#e0a13a; --bad:#e2604a;
-    --easy:#7c6cf0;
+    --easy:#7c6cf0; --toggle:#14b8a6;
   }
   @media (prefers-color-scheme: light){
     :root{ --bg:#f4f6f8; --panel:#ffffff; --panel2:#eef2f6; --ink:#12181f; --muted:#5a6b7a;
-      --line:#dde4ea; --accent:#1f6fd6; --good:#1c9e63; --warn:#c6851f; --bad:#cc4630; --easy:#5a48d6;}
+      --line:#dde4ea; --accent:#1f6fd6; --good:#1c9e63; --warn:#c6851f; --bad:#cc4630; --easy:#5a48d6; --toggle:#0d9488;}
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%}
@@ -32,8 +32,7 @@
   .hbtns{display:flex;gap:6px;flex:0 0 auto}
   .brand{font-weight:700;font-size:18px;letter-spacing:.3px;cursor:pointer;user-select:none}
   .brand:hover{color:var(--accent)}
-  .stats{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-  .stats::-webkit-scrollbar{display:none}
+  .stats{display:flex;gap:6px;flex-wrap:nowrap;overflow:hidden}
   .chip{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px 9px;font-size:11.5px;color:var(--muted);white-space:nowrap;flex:0 0 auto}
   .chip b{color:var(--ink);font-weight:700}
   .chip.new b{color:var(--accent)} .chip.due b{color:var(--warn)} .chip.streak b{color:var(--good)}
@@ -65,7 +64,7 @@
   button.b.sm{padding:8px 13px;font-size:13.5px}
   .seg{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel2)}
   .seg button{border:none;background:transparent;color:var(--muted);padding:10px 18px;font-size:14.5px;font-weight:600;cursor:pointer}
-  .seg button.on{background:var(--accent);color:#fff}
+  .seg button.on{background:var(--toggle);color:#fff}
   .seg button:disabled{opacity:.4;cursor:default}
   .menuitem{display:block;width:100%;text-align:left;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px 14px;font-size:14.5px;font-weight:600;cursor:pointer;margin-bottom:6px}
   .menuitem:hover{border-color:var(--accent)}
@@ -79,9 +78,8 @@
   .v{font-size:15px;line-height:1.5}
   .cmp{display:flex;flex-direction:column;gap:5px}
   .cmp div{font-size:15px} .cmp .w{font-weight:600} .cmp .p{color:var(--accent);font-size:13px;margin:0 6px}
-  .ex .zh{font-size:16px;line-height:1.6;cursor:pointer} .ex .en{font-size:13.5px;margin-top:2px;color:var(--muted)}
-  .ex-p{color:var(--accent);font-size:12.5px;line-height:1.5;visibility:hidden;margin-bottom:2px}
-  .ex-p.show{visibility:visible}
+  .ex .zh{font-size:16px;line-height:1.6} .ex .en{font-size:13.5px;margin-top:2px;color:var(--muted)}
+  .ex .exp{color:var(--muted);font-size:12.5px;line-height:1.5;margin-top:2px}
   .btncol{display:flex;flex-direction:column;gap:8px;max-width:340px;margin:16px auto 0;width:100%}
   .btncol .b{width:100%}
   @media (max-width:480px){
@@ -92,16 +90,20 @@
   .learn .hanzi{font-size:96px}
   .empty{color:var(--muted);text-align:center;line-height:1.7}
   .empty h2{color:var(--ink);margin:.2em 0}
-  dialog{border:none;border-radius:16px;background:var(--panel);color:var(--ink);max-width:440px;width:92%;padding:20px}
+  dialog{border:none;border-radius:16px;background:var(--panel);color:var(--ink);width:min(92vw,400px);max-height:85vh;overflow-y:auto;padding:18px}
   dialog::backdrop{background:rgba(0,0,0,.55)}
   dialog h3{margin:.1em 0 .7em}
   .field{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
-  .field input{width:80px;text-align:center;padding:7px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:15px}
+  .field input{width:76px;text-align:center;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:16px}
   .muted{color:var(--muted);font-size:13px;line-height:1.6}
   .foot{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
   a.link{color:var(--accent);cursor:pointer;font-size:12.5px}
   kbd{background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12px}
-  .progress-note{font-size:12px;color:var(--muted);text-align:center;margin-top:8px}
+  .progress-note{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
+  .footprog{max-width:520px;margin:8px auto 0;width:100%}
+  .footprog-row{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--muted);margin-bottom:5px}
+  .footprog-row b{color:var(--ink)}
+  .footprog-pct{font-size:11px;color:var(--muted);text-align:right;margin-top:4px}
 </style>
 </head>
 <body>
@@ -119,6 +121,11 @@
 
   <div class="card" id="stage"></div>
 
+  <div class="footprog" id="footProg">
+    <div class="footprog-row"><span>Characters known</span><span id="fpNum"></span></div>
+    <div class="pbar"><div class="pfill" id="fpFill" style="width:0%"></div></div>
+    <div class="footprog-pct" id="fpPct"></div>
+  </div>
   <div class="foot">
     <a class="link" id="lnkMore">More ⋯</a>
   </div>
@@ -139,7 +146,7 @@
 
 <dialog id="dlgData">
   <h3>Backup &amp; data</h3>
-  <div class="muted">Your progress lives only in this browser. Export a backup regularly, or to move to another device. Importing a <b>deck pack</b> adds new characters; importing a <b>progress</b> file restores your scheduling.</div>
+  <div class="muted">Your progress is saved on this device only. <b>Export</b> a backup now and then (and before switching phones). <b>Import</b> restores a backup you exported earlier — useful on a new device or if your browser data gets cleared.</div>
   <div class="btnrow" style="justify-content:flex-start;margin-top:14px">
     <button class="b sm" id="btnExport">Export backup</button>
     <button class="b ghost sm" id="btnImport">Import file…</button>
@@ -302,9 +309,6 @@ function toneMarks(str){
   if(!str) return str;
   return String(str).replace(/([a-zü:]+)([1-5])/gi,(m,letters,tone)=>syl2mark(letters,tone));
 }
-/* tap a sentence to reveal/hide its pinyin without shifting layout (pinyin space is reserved) */
-function togglePinyin(el){ const p=el.parentNode.querySelector('.ex-p'); if(p) p.classList.toggle('show'); }
-
 function normPin(s){
   return (s||'').toLowerCase().trim()
     .replace(/ü/g,'u').replace(/u:/g,'u').replace(/v/g,'u')
@@ -329,10 +333,13 @@ function renderStats(){
   el.innerHTML=`
     <span class="chip new${nLeft>0?' clk':''}" id="chipNew" title="${nLeft>0?'Jump to learning new cards':''}">New <b>${nLeft}</b></span>
     <span class="chip due${due>0?' clk':''}" id="chipDue" title="${due>0?'Jump to reviews':''}">Due <b>${due}</b></span>
-    <span class="chip streak">Streak <b>${state.streak}</b></span>
-    <span class="chip" title="Characters you know toward the ${fmtNum(masteryTarget())} 常用字 (your existing ${fmtNum(masteryBase())} + learned here)">Known <b>${fmtNum(masteryKnown())}</b>/${fmtNum(masteryTarget())}</span>`;
+    <span class="chip streak">Streak <b>${state.streak}</b></span>`;
   const cn=document.getElementById('chipNew'); if(cn&&nLeft>0) cn.onclick=()=>startNew();
   const cd=document.getElementById('chipDue'); if(cd&&due>0) cd.onclick=()=>startReviews();
+  const mk=masteryKnown(), mt=masteryTarget(), mp=Math.round(mk/mt*100);
+  document.getElementById('fpNum').innerHTML=`<b>${fmtNum(mk)}</b> / ${fmtNum(mt)}`;
+  document.getElementById('fpFill').style.width=mp+'%';
+  document.getElementById('fpPct').textContent=mp+'%';
   document.getElementById('pnote').textContent = 'Hanzi SRS';
 }
 
@@ -512,13 +519,13 @@ function startTimer(secs,onEnd){
 
 function revealBody(card, isNew){
   const cmp=(card.compounds||[]).map(c=>`<div><span class="w">${c.w}</span><span class="p">${toneMarks(c.p)}</span>— ${c.m}</div>`).join('');
-  const ex=(card.examples||[]).map(e=>`<div class="ex" style="margin-bottom:10px"><div class="ex-p">${toneMarks(e.p)}</div><div class="zh" onclick="togglePinyin(this)" title="Tap to show pinyin">${e.zh}</div><div class="en">${e.en}</div></div>`).join('');
+  const ex=(card.examples||[]).map(e=>`<div class="ex" style="margin-bottom:10px"><div class="zh">${e.zh}</div><div class="exp">${toneMarks(e.p)}</div><div class="en">${e.en}</div></div>`).join('');
   const radRow = (card.radical||card.readings) ?
     `<div class="row"><div class="k">Radical / components</div><div class="v">${toneMarks(card.radical||'')}${card.components?`<br><span class="muted">${toneMarks(card.components)}</span>`:''}${card.readings?`<br><span class="muted">Readings: ${toneMarks(card.readings)}</span>`:''}</div></div>` : '';
   const cmpRow = (card.compounds&&card.compounds.length) ?
     `<div class="row"><div class="k">Compounds 词语</div><div class="v cmp">${cmp}</div></div>` : '';
   const exRow = (card.examples&&card.examples.length) ?
-    `<div class="row"><div class="k">Examples 例句 <span class="muted" style="text-transform:none;letter-spacing:0">· tap a sentence for pinyin</span></div><div class="v">${ex}</div></div>` : '';
+    `<div class="row"><div class="k">Examples 例句</div><div class="v">${ex}</div></div>` : '';
   return `<div class="reveal">
     <div class="row"><div class="k">Meaning</div><div class="v">${card.meaning}${card.meaningZh?`<div class="muted" style="margin-top:3px">${card.meaningZh}</div>`:''}</div></div>
     ${radRow}${cmpRow}${exRow}
@@ -621,9 +628,8 @@ function renderLanding(){
   let mode=state.settings.mode||'full';
   if(mode==='rapid' && !rapidReady) mode='full'; // can't run rapid with an empty pool
   const desc = mode==='rapid'
-    ? '<b>Rapid drill</b>: a pinyin-only speed pass over cards you already know. Correct jumps ahead instantly; a miss sends the card back to full review.'
-    : '<b>Full study</b>: today\'s new cards and due reviews, with the meaning reveal and Study / Review&nbsp;Again / Easy.';
-  const mKnown=masteryKnown(), mTarget=masteryTarget(), mPct=Math.round(mKnown/mTarget*100);
+    ? 'Rapid drill — a pinyin-only speed pass over cards you already know. Correct jumps ahead; a miss goes back to full review.'
+    : 'Study today\'s new cards and review.';
   stage.className='card center';
   stage.innerHTML=`<div class="empty">
     <h2>你好, Grace 👋</h2>
@@ -636,13 +642,6 @@ function renderLanding(){
       <button class="b" id="startBtn" style="font-size:17px;padding:13px 40px">Start</button>
     </div>
     <p class="muted" id="modeDesc" style="margin-top:16px;min-height:2.6em">${desc}</p>
-    <div style="max-width:430px;margin:8px auto 0">
-      <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:6px">
-        <span>Characters known · toward the ${fmtNum(mTarget)} 常用字</span>
-        <span><b style="color:var(--ink)">${fmtNum(mKnown)}</b> / ${fmtNum(mTarget)} · ${mPct}%</span>
-      </div>
-      <div class="pbar"><div class="pfill" style="width:${mPct}%"></div></div>
-    </div>
   </div>`;
   document.querySelectorAll('#modeSeg button').forEach(btn=>{
     btn.onclick=()=>{ if(btn.disabled) return; state.settings.mode=btn.dataset.mode; save(); renderLanding(); };
