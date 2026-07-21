@@ -43,7 +43,9 @@
   .iconbtn:hover{color:var(--ink)}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 20px;flex:1;display:flex;flex-direction:column;min-height:0}
   .center{align-items:center;justify-content:center;text-align:center}
-  .prompt{align-items:center;justify-content:flex-start;text-align:center;padding-top:26px}
+  .prompt{align-items:center;justify-content:flex-start;text-align:center;padding-top:26px;overflow-y:auto}
+  /* when the keyboard is up, hide the bottom chrome so the typing card has room and nothing overlaps */
+  body.kb .footprog, body.kb .foot, body.kb .progress-note{display:none}
   .qchar{font-size:104px;line-height:1.05;font-weight:600;margin:2px 0 2px;text-align:center}
   .cardtop{flex:0 0 auto;text-align:center}
   .cardscroll{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;margin:6px -4px 0;padding:2px 4px}
@@ -543,7 +545,7 @@ function showReviewPrompt(card){
     <div class="badge" style="margin-top:2px">${badge}</div>
     ${t>0?`<div class="timerbar"><div class="timerfill" id="tfill"></div></div><div class="tnum" id="tnum"></div>`:''}
     <input class="pin" id="pinIn" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="e.g. wo3">
-    <div class="hint">Type the reading with a tone number (1–5), e.g. <kbd>hao3</kbd>. Press <kbd>Enter</kbd> to check.</div>
+    <div class="hint">Reading + tone number, e.g. <kbd>hao3</kbd> · <kbd>Enter</kbd> to check</div>
     <div class="btnrow"><button class="b ghost sm" id="showBtn">Show answer</button></div>`;
   const input=document.getElementById('pinIn');
   input.focus(); setTimeout(()=>window.scrollTo(0,0),0);
@@ -804,7 +806,12 @@ renderLanding();
 (function keepFixedToViewport(){
   const vv = window.visualViewport;
   if(!vv) return;
-  const fit = ()=>{ document.body.style.height = vv.height + 'px'; window.scrollTo(0,0); };
+  const fit = ()=>{
+    document.body.style.height = vv.height + 'px';
+    window.scrollTo(0,0);
+    const kbUp = (window.innerHeight - vv.height) > 120; // keyboard likely open
+    document.body.classList.toggle('kb', kbUp);
+  };
   vv.addEventListener('resize', fit);
   vv.addEventListener('scroll', ()=>{ if(window.scrollY!==0 || vv.offsetTop!==0) window.scrollTo(0,0); });
   fit();
