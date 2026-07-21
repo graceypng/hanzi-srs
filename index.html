@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <title>汉字 SRS — Hanzi Spaced Repetition</title>
 <meta name="theme-color" content="#0f1419">
 <link rel="manifest" href="manifest.webmanifest">
@@ -25,7 +25,7 @@
   *{box-sizing:border-box}
   html,body{margin:0;height:100%}
   body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,"Noto Sans SC",sans-serif;
-    display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden}
+    display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;overscroll-behavior:none;position:fixed;top:0;left:0;right:0}
   .wrap{max-width:720px;margin:0 auto;width:100%;padding:16px;padding-top:calc(20px + env(safe-area-inset-top,0px));flex:1;display:flex;flex-direction:column;min-height:0}
   header{margin-bottom:14px}
   .hrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
@@ -473,7 +473,7 @@ function showRapidPrompt(card){
     ${t>0?`<div class="timerbar"><div class="timerfill" id="tfill"></div></div><div class="tnum" id="tnum"></div>`:''}
     <input class="pin" id="pinIn" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="e.g. wo3">
     <div class="hint">Right answers jump ahead instantly · a miss sends the card back to full review. Press <kbd>Enter</kbd>.</div>`;
-  const input=document.getElementById('pinIn'); input.focus();
+  const input=document.getElementById('pinIn'); input.focus(); setTimeout(()=>window.scrollTo(0,0),0);
   input.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); doRapid(card,input.value);} });
   if(t>0) startTimer(t,()=>doRapid(card, document.getElementById('pinIn')?document.getElementById('pinIn').value:''));
 }
@@ -546,7 +546,7 @@ function showReviewPrompt(card){
     <div class="hint">Type the reading with a tone number (1–5), e.g. <kbd>hao3</kbd>. Press <kbd>Enter</kbd> to check.</div>
     <div class="btnrow"><button class="b ghost sm" id="showBtn">Show answer</button></div>`;
   const input=document.getElementById('pinIn');
-  input.focus();
+  input.focus(); setTimeout(()=>window.scrollTo(0,0),0);
   input.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); doReveal(card,input.value);} });
   document.getElementById('showBtn').onclick=()=>doReveal(card,input.value);
   if(t>0) startTimer(t,()=>doReveal(card,document.getElementById('pinIn')?document.getElementById('pinIn').value:''));
@@ -799,6 +799,16 @@ document.getElementById('brandHome').onclick=()=>{ clearTimer(); keyGrade=null; 
 
 /* ---------- boot ---------- */
 renderLanding();
+/* Keep the app sized to the VISIBLE area so the on-screen keyboard overlays the bottom
+   instead of scrolling/pushing the whole page up. Only the keyboard moves. */
+(function keepFixedToViewport(){
+  const vv = window.visualViewport;
+  if(!vv) return;
+  const fit = ()=>{ document.body.style.height = vv.height + 'px'; window.scrollTo(0,0); };
+  vv.addEventListener('resize', fit);
+  vv.addEventListener('scroll', ()=>{ if(window.scrollY!==0 || vv.offsetTop!==0) window.scrollTo(0,0); });
+  fit();
+})();
 /* register service worker (only takes effect when hosted; harmless as a local file) */
 if('serviceWorker' in navigator){ window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }); }
 </script>
