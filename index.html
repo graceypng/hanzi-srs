@@ -41,11 +41,15 @@
   .pfill{height:100%;background:linear-gradient(90deg,var(--good),var(--accent));border-radius:999px;transition:width .4s ease}
   .iconbtn{background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:6px 9px;cursor:pointer;font-size:13px}
   .iconbtn:hover{color:var(--ink)}
+  .stagewrap{position:relative;flex:1;display:flex;flex-direction:column;min-height:0}
+  .cardx{position:absolute;top:10px;right:10px;z-index:5;background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:9px;width:34px;height:34px;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .cardx:hover{color:var(--ink);border-color:var(--accent)} .cardx:active{transform:translateY(1px)}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 20px;flex:1;display:flex;flex-direction:column;min-height:0}
   .center{align-items:center;justify-content:center;text-align:center}
   .prompt{align-items:center;justify-content:flex-start;text-align:center;padding-top:26px;overflow-y:auto}
-  /* when the keyboard is up, hide the bottom chrome so the typing card has room and nothing overlaps */
-  body.kb .footprog, body.kb .foot, body.kb .progress-note{display:none}
+  /* hide the bottom chrome on answer screens (before the keyboard even opens) so there's no reflow/jump */
+  body.kb .footprog, body.kb .foot, body.kb .progress-note,
+  body.answering .footprog, body.answering .foot, body.answering .progress-note{display:none}
   .qchar{font-size:104px;line-height:1.05;font-weight:600;margin:2px 0 2px;text-align:center}
   .cardtop{flex:0 0 auto;text-align:center}
   .cardscroll{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;margin:6px -4px 0;padding:2px 4px}
@@ -87,7 +91,7 @@
   .btncol{display:flex;flex-direction:column;gap:8px;max-width:340px;margin:16px auto 0;width:100%}
   .btncol .b{width:100%}
   @media (max-width:480px){
-    .hanzi{font-size:92px} .learn .hanzi{font-size:76px} .qchar{font-size:88px}
+    .hanzi{font-size:92px} .learn .hanzi{font-size:76px} .qchar{font-size:80px}
     .card{padding:20px 15px} .rd-pin{font-size:26px} .row{padding:8px 0}
     .prompt{padding-top:18px}
   }
@@ -124,7 +128,10 @@
     <div class="stats" id="stats"></div>
   </header>
 
-  <div class="card" id="stage"></div>
+  <div class="stagewrap">
+    <div class="card" id="stage"></div>
+    <button class="cardx" id="btnExit" title="Back to home" style="display:none">✕</button>
+  </div>
 
   <div class="footprog" id="footProg">
     <div class="footprog-row"><span>Characters known</span><span id="fpNum"></span></div>
@@ -333,6 +340,10 @@ function checkPinyin(card,input){
 
 /* ---------- render ---------- */
 const stage=document.getElementById('stage');
+const btnExit=document.getElementById('btnExit');
+btnExit.onclick=()=>renderLanding();
+function setExit(v){ btnExit.style.display = v?'':'none'; }
+function setAnswering(v){ document.body.classList.toggle('answering', !!v); } /* hides footer chrome on answer screens */
 let timerHandle=null, timerRemain=0;
 
 function renderStats(){
@@ -356,10 +367,11 @@ function renderStats(){
 function clearTimer(){ if(timerHandle){clearInterval(timerHandle);timerHandle=null;} }
 
 function renderDone(title, sub){
-  clearTimer(); keyGrade=null;
+  clearTimer(); keyGrade=null; setAnswering(false); setExit(true);
   const due=dueReviews().length;
   const nLeft=Math.max(0,state.settings.newPerDay-state.daily.newDone);
   const studied=(state.daily.studied||[]).length;
+  const caughtUp = due===0 && nLeft===0;
   stage.className='card center';
   stage.innerHTML=`<div class="empty">
     <h2>${title||'Done'}</h2>
@@ -368,14 +380,14 @@ function renderDone(title, sub){
     <div class="btncol" style="margin-top:8px">
       ${due>0?`<button class="b" id="revBtn">Review now (${due})</button>`:''}
       ${nLeft>0?`<button class="b ${due>0?'ghost':''}" id="newBtn">Learn new cards (${nLeft})</button>`:''}
+      ${caughtUp?`<button class="b" id="extraBtn">Extra practice</button>`:''}
       ${studied?`<button class="b ghost" id="againBtn">Study today's words again</button>`:''}
-      <button class="b ghost" id="homeBtn">Home</button>
     </div>
   </div>`;
   const rev=document.getElementById('revBtn'); if(rev) rev.onclick=()=>startReviews();
   const nw=document.getElementById('newBtn'); if(nw) nw.onclick=()=>startNew();
+  const ex=document.getElementById('extraBtn'); if(ex) ex.onclick=()=>startReviewPractice();
   const ag=document.getElementById('againBtn'); if(ag) ag.onclick=()=>startReplay();
-  document.getElementById('homeBtn').onclick=()=>renderLanding();
   renderStats();
 }
 
@@ -437,6 +449,7 @@ function showFlipCard(card){
 
 function showCard(){
   clearTimer();
+  setExit(true); setAnswering(false);
   const item=current();
   if(!item){ endSession(); return; }
   session.revealed=false; session.pinyinCorrect=null;
@@ -468,6 +481,7 @@ function startRapid(){
 function showRapidPrompt(card){
   keyGrade=null;
   stage.className='card prompt';
+  setAnswering(true);
   const t=state.settings.timerSeconds;
   stage.innerHTML=`
     <div class="qchar">${card.char}</div>
@@ -494,7 +508,7 @@ function doRapid(card,val){
   }
 }
 function showRapidMiss(card,val){
-  clearTimer();
+  clearTimer(); setAnswering(false);
   const shown=(val&&val.trim())?val.trim():'(no answer)';
   stage.className='card center';
   stage.innerHTML=`
@@ -538,8 +552,9 @@ function showNewCard(card){
 /* REVIEW card: hidden pinyin, typed recall, timer */
 function showReviewPrompt(card){
   stage.className='card prompt';
+  setAnswering(true);
   const t=state.settings.timerSeconds;
-  const badge = session.practice ? 'Practice · type pinyin + tone (no effect on schedule)' : 'Recall · type pinyin + tone number';
+  const badge = session.practice ? 'Practice — no schedule change' : 'Type the reading + tone';
   stage.innerHTML=`
     <div class="qchar">${card.char}</div>
     <div class="badge" style="margin-top:2px">${badge}</div>
@@ -584,7 +599,7 @@ function revealBody(card, isNew){
 
 function doReveal(card, inputVal){
   if(session.revealed) return;
-  clearTimer(); session.revealed=true;
+  clearTimer(); setAnswering(false); session.revealed=true;
   const ok=checkPinyin(card,inputVal);
   session.pinyinCorrect=ok;
   const shown=(inputVal&&inputVal.trim())?inputVal.trim():'(no answer)';
@@ -679,6 +694,7 @@ function updateStreak(){
 /* ---------- landing ---------- */
 function renderLanding(){
   rollover();
+  setExit(false); setAnswering(false);
   const due=dueReviews().length;
   const nLeft=Math.max(0,state.settings.newPerDay-state.daily.newDone);
   const rapidReady=graduatedDue().length;
